@@ -7,7 +7,7 @@
     "deploy": "vercel --prod"
   },
   "dependencies": {
-    "claude-code-sdk": "^1.0.3"
+    "@anthropic-ai/claude-code": "^1.0.51"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
