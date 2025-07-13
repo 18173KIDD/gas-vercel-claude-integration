@@ -1,5 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { query, ClaudeCodeOptions, AssistantMessage, TextBlock } from 'claude-code-sdk';
+import { query, type SDKMessage } from '@anthropic-ai/claude-code';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // CORS設定
@@ -44,28 +44,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       // Claude Code SDKクエリ実行
       console.log(`Processing query: ${prompt}`);
-      const responseParts: string[] = [];
+      const messages: SDKMessage[] = [];
 
       try {
-        // Claude Code SDKオプション設定
-        const options: ClaudeCodeOptions = {
-          output_format: 'streaming_json',
-          max_turns: 1,
-          allowed_tools: ['none'], // ツール使用を無効化（安全性のため）
-        };
-
-        // クエリ実行
-        for await (const message of query(prompt, options)) {
-          if (message instanceof AssistantMessage) {
-            for (const block of message.content) {
-              if (block instanceof TextBlock) {
-                responseParts.push(block.text);
-              }
-            }
-          }
+        // 環境変数チェック
+        if (!process.env.ANTHROPIC_API_KEY) {
+          throw new Error('ANTHROPIC_API_KEY environment variable is not set');
         }
 
-        const responseText = responseParts.join('');
+        // クエリ実行
+        for await (const message of query({
+          prompt: prompt,
+          abortController: new AbortController(),
+          options: {
+            maxTurns: 1, // 1ターンのみ（安全性のため）
+            apiKey: process.env.ANTHROPIC_API_KEY,
+          }
+        })) {
+          messages.push(message);
+        }
+
+        // メッセージからテキストを抽出
+        const responseText = messages
+          .filter((msg: any) => msg.type === 'message' && msg.role === 'assistant')
+          .map((msg: any) => {
+            // メッセージ内容からテキストを抽出
+            if (msg.content && Array.isArray(msg.content)) {
+              return msg.content
+                .filter((block: any) => block.type === 'text')
+                .map((block: any) => block.text || '')
+                .join('');
+            }
+            return '';
+          })
+          .join('');
 
         // 成功レスポンス
         res.status(200).json({
@@ -100,4 +112,4 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     status: 'error',
     message: 'Method not allowed'
   });
-}
+          }
