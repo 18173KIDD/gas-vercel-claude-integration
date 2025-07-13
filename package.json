@@ -1,0 +1,20 @@
+{
+  "name": "gas-vercel-claude-integration",
+  "version": "1.0.0",
+  "description": "GAS to Vercel to Claude Code SDK integration",
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel --prod"
+  },
+  "dependencies": {
+    "claude-code-sdk": "^1.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@vercel/node": "^3.0.17",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
